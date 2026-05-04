@@ -1,4 +1,4 @@
-class ClaudeAether < Formula
+class Aether < Formula
   desc "Live agent observability for Claude Code"
   homepage "https://github.com/connectchiragg/aether"
   version "0.2.0"
