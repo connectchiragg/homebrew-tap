@@ -1,26 +1,26 @@
 class Aether < Formula
   desc "Live agent observability for Claude Code"
   homepage "https://github.com/connectchiragg/aether"
-  version "0.2.0"
+  version "0.3.0"
   license "MIT"
 
   on_macos do
     if Hardware::CPU.arm?
       url "https://github.com/connectchiragg/aether/releases/download/v#{version}/aether-aarch64-apple-darwin.tar.gz"
-      sha256 "f6139d51f6cc941fcf5d024c1f2b76ebf514dcd5a8ec86a9ada34055c910c685"
+      sha256 "25131979f1bba5991fb5442a4ed646cc4ddf14403c6ea7c8a85942b86004ccf8"
     else
       url "https://github.com/connectchiragg/aether/releases/download/v#{version}/aether-x86_64-apple-darwin.tar.gz"
-      sha256 "06fb53974710a1388f4b0a750ab825e0aa0f7700aad4f731c3297ac9a10cdae1"
+      sha256 "fe473914b842e601a6714c9abd621a5628fa45b98460d0cd20d1197b0717b338"
     end
   end
 
   on_linux do
     if Hardware::CPU.arm?
       url "https://github.com/connectchiragg/aether/releases/download/v#{version}/aether-aarch64-unknown-linux-gnu.tar.gz"
-      sha256 "872b136a89f5067487e3a10e2ecd2e7026ac76936833b51cfd9a28e372136a23"
+      sha256 "c1ff8f5d31d0ca034fad674568b05dfd620f58a8dcf3808b4e2a73427b0f0b38"
     else
       url "https://github.com/connectchiragg/aether/releases/download/v#{version}/aether-x86_64-unknown-linux-gnu.tar.gz"
-      sha256 "164f96ea5bdce050f3a0a6019f57b09d9b9ecc95473d6ca91a2fecabb42b3a08"
+      sha256 "af48b62bba86b6b075033a79aa5c572bd194f2de38e6ebc6626224ec0329b4cc"
     end
   end
 
@@ -34,7 +34,7 @@ class Aether < Formula
         aether setup
 
       Then:
-        aether              # start watching sessions
+        aether watch        # start watching sessions
         /aether             # in Claude Code to enable metrics
 
       To clean up after uninstall:
