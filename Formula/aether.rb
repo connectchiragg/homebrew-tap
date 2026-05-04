@@ -4,9 +4,6 @@ class Aether < Formula
   version "0.2.0"
   license "MIT"
 
-  depends_on :macos
-  depends_on "python@3" => :optional
-
   on_macos do
     if Hardware::CPU.arm?
       url "https://github.com/connectchiragg/aether/releases/download/v#{version}/aether-aarch64-apple-darwin.tar.gz"
@@ -29,194 +26,78 @@ class Aether < Formula
 
   def install
     bin.install "aether"
-  end
 
-  def post_install
-    home = ENV["HOME"] || Dir.home
+    # Install setup script that user runs once
+    (bin/"aether-setup").write <<~SH
+      #!/bin/bash
+      set -euo pipefail
+      GREEN='\\033[0;32m'
+      BOLD='\\033[1m'
+      DIM='\\033[2m'
+      NC='\\033[0m'
+      info() { echo -e "${GREEN}${BOLD}==>${NC} $1"; }
 
-    # Install Claude Code skill
-    skill_dir = File.join(home, ".claude", "skills", "aether")
-    FileUtils.mkdir_p(skill_dir)
-    File.write(File.join(skill_dir, "SKILL.md"), skill_content)
+      info "Setting up aether for Claude Code..."
 
-    # Install metrics hook (inactive by default)
-    hooks_dir = File.join(home, ".claude", "hooks")
-    FileUtils.mkdir_p(hooks_dir)
-    hook_off = File.join(hooks_dir, "aether-metrics.py.off")
-    unless File.exist?(hook_off) || File.exist?(File.join(hooks_dir, "aether-metrics.py"))
-      system "curl", "-fsSL",
-        "https://raw.githubusercontent.com/connectchiragg/aether/master/.claude/hooks/aether-metrics.py",
-        "-o", hook_off
-      FileUtils.chmod(0o755, hook_off) if File.exist?(hook_off)
-    end
+      # Skill
+      mkdir -p ~/.claude/skills/aether
+      curl -fsSL https://raw.githubusercontent.com/connectchiragg/aether/master/.claude/skills/aether/SKILL.md \\
+        -o ~/.claude/skills/aether/SKILL.md
+      info "Skill installed"
 
-    # Register Stop hook in settings.json
-    settings_path = File.join(home, ".claude", "settings.json")
-    register_stop_hook(settings_path)
+      # Metrics hook (inactive)
+      mkdir -p ~/.claude/hooks
+      if [ ! -f ~/.claude/hooks/aether-metrics.py ] && [ ! -f ~/.claude/hooks/aether-metrics.py.off ]; then
+        curl -fsSL https://raw.githubusercontent.com/connectchiragg/aether/master/.claude/hooks/aether-metrics.py \\
+          -o ~/.claude/hooks/aether-metrics.py.off
+        chmod +x ~/.claude/hooks/aether-metrics.py.off
+        info "Metrics hook installed (inactive)"
+      fi
 
-    ohai "Skill installed to #{skill_dir}"
-    ohai "Run `aether watch` to start, then `/aether` in Claude Code to enable metrics"
-  end
+      # Register Stop hook
+      python3 - ~/.claude/settings.json << 'PYEOF'
+import json, sys, os
+path = sys.argv[1]
+settings = {}
+if os.path.exists(path):
+    try:
+        with open(path) as f: settings = json.load(f)
+    except: pass
+hooks = settings.get("hooks", {})
+stop = hooks.get("Stop", [])
+cmd = "python3 ~/.claude/hooks/aether-metrics.py"
+if not any(cmd in h.get("command","") for e in stop for h in e.get("hooks",[])):
+    stop.append({"matcher":"","hooks":[{"type":"command","command":cmd}]})
+    hooks["Stop"] = stop
+    settings["hooks"] = hooks
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    with open(path,"w") as f: json.dump(settings, f, indent=2)
+PYEOF
+      info "Stop hook registered"
 
-  def uninstall
-    cleanup_aether
-  end
-
-  def post_uninstall
-    cleanup_aether
+      echo ""
+      info "Setup complete!"
+      echo -e "  Run ${BOLD}aether watch${NC} to start"
+      echo -e "  Type ${BOLD}/aether${NC} in Claude Code to enable metrics"
+    SH
+    chmod 0755, bin/"aether-setup"
   end
 
   def caveats
     <<~EOS
-      To start observing Claude Code sessions:
-        aether watch
+      Run the setup script to install the Claude Code skill and hooks:
+        aether-setup
 
-      To enable per-turn quality metrics, type in Claude Code:
-        /aether
+      Then:
+        aether watch        # in a separate terminal
+        /aether             # in Claude Code to enable metrics
 
-      To fully clean up after uninstall:
+      To clean up after uninstall:
         curl -fsSL https://raw.githubusercontent.com/connectchiragg/aether/master/uninstall.sh | bash
     EOS
   end
 
   test do
     assert_match "aether", shell_output("#{bin}/aether --help")
-  end
-
-  private
-
-  def cleanup_aether
-    home = ENV["HOME"] || Dir.home
-
-    # Remove skill
-    skill_dir = File.join(home, ".claude", "skills", "aether")
-    FileUtils.rm_rf(skill_dir) if Dir.exist?(skill_dir)
-
-    # Remove hooks
-    hooks_dir = File.join(home, ".claude", "hooks")
-    %w[aether-hook.py aether-hook.py.off aether-metrics.py aether-metrics.py.off].each do |f|
-      path = File.join(hooks_dir, f)
-      FileUtils.rm_f(path) if File.exist?(path)
-    end
-
-    # Remove recaps
-    recaps_dir = File.join(home, ".claude", ".aether-recaps")
-    FileUtils.rm_rf(recaps_dir) if Dir.exist?(recaps_dir)
-
-    # Remove Stop hook from settings.json
-    settings_path = File.join(home, ".claude", "settings.json")
-    if File.exist?(settings_path)
-      begin
-        require "json"
-        settings = JSON.parse(File.read(settings_path))
-        hooks = settings["hooks"] || {}
-        stop_hooks = hooks["Stop"] || []
-        stop_hooks.reject! do |entry|
-          (entry["hooks"] || []).any? { |h| (h["command"] || "").include?("aether") }
-        end
-        if stop_hooks.empty?
-          hooks.delete("Stop")
-        else
-          hooks["Stop"] = stop_hooks
-        end
-        if hooks.empty?
-          settings.delete("hooks")
-        else
-          settings["hooks"] = hooks
-        end
-        File.write(settings_path, JSON.pretty_generate(settings))
-      rescue StandardError
-        # Don't fail uninstall if settings cleanup fails
-      end
-    end
-  end
-
-  def skill_content
-    <<~'SKILL'
----
-name: aether
-description: |
-  Toggle live agent observability and per-turn quality metrics.
-  Run /aether to toggle on or off.
-allowed-tools:
-  - Bash
----
-
-# Aether — Live Agent Observability
-
-When this skill is invoked, first check if aether is currently enabled:
-
-```bash
-if [ -f ~/.claude/hooks/aether-metrics.py ]; then
-  echo "AETHER_STATUS=enabled"
-else
-  echo "AETHER_STATUS=disabled"
-fi
-```
-
-## If currently ENABLED → turn it OFF
-
-```bash
-[ -f ~/.claude/hooks/aether-hook.py ] && mv ~/.claude/hooks/aether-hook.py ~/.claude/hooks/aether-hook.py.off
-[ -f ~/.claude/hooks/aether-metrics.py ] && mv ~/.claude/hooks/aether-metrics.py ~/.claude/hooks/aether-metrics.py.off
-```
-
-Print:
-
-> **Aether disabled.** Agent logging and metrics scoring are off.
-> Run `/aether` again to re-enable.
-
-Then STOP. Do not proceed to the enable steps.
-
-## If currently DISABLED → turn it ON
-
-```bash
-mkdir -p ~/.claude/hooks
-[ -f ~/.claude/hooks/aether-hook.py.off ] && mv ~/.claude/hooks/aether-hook.py.off ~/.claude/hooks/aether-hook.py
-[ -f ~/.claude/hooks/aether-metrics.py.off ] && mv ~/.claude/hooks/aether-metrics.py.off ~/.claude/hooks/aether-metrics.py
-```
-
-Print:
-
-> **Aether enabled.** Per-turn quality metrics will be scored live.
->
-> Open a second terminal and run:
-> ```
-> aether watch
-> ```
-
-Then STOP.
-SKILL
-  end
-
-  def register_stop_hook(settings_path)
-    require "json"
-    settings = {}
-    if File.exist?(settings_path)
-      begin
-        settings = JSON.parse(File.read(settings_path))
-      rescue JSON::ParserError
-        settings = {}
-      end
-    end
-
-    hooks = settings["hooks"] || {}
-    stop_hooks = hooks["Stop"] || []
-    metrics_cmd = "python3 ~/.claude/hooks/aether-metrics.py"
-
-    already = stop_hooks.any? do |entry|
-      (entry["hooks"] || []).any? { |h| (h["command"] || "").include?(metrics_cmd) }
-    end
-
-    unless already
-      stop_hooks << {
-        "matcher" => "",
-        "hooks" => [{ "type" => "command", "command" => metrics_cmd }]
-      }
-      hooks["Stop"] = stop_hooks
-      settings["hooks"] = hooks
-      FileUtils.mkdir_p(File.dirname(settings_path))
-      File.write(settings_path, JSON.pretty_generate(settings))
-    end
   end
 end
