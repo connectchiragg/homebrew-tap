@@ -4,6 +4,9 @@ class Aether < Formula
   version "0.2.0"
   license "MIT"
 
+  depends_on :macos
+  depends_on "python@3" => :optional
+
   on_macos do
     if Hardware::CPU.arm?
       url "https://github.com/connectchiragg/aether/releases/download/v#{version}/aether-aarch64-apple-darwin.tar.gz"
@@ -55,6 +58,14 @@ class Aether < Formula
     ohai "Run `aether watch` to start, then `/aether` in Claude Code to enable metrics"
   end
 
+  def uninstall
+    cleanup_aether
+  end
+
+  def post_uninstall
+    cleanup_aether
+  end
+
   def caveats
     <<~EOS
       To start observing Claude Code sessions:
@@ -62,6 +73,9 @@ class Aether < Formula
 
       To enable per-turn quality metrics, type in Claude Code:
         /aether
+
+      To fully clean up after uninstall:
+        curl -fsSL https://raw.githubusercontent.com/connectchiragg/aether/master/uninstall.sh | bash
     EOS
   end
 
@@ -70,6 +84,52 @@ class Aether < Formula
   end
 
   private
+
+  def cleanup_aether
+    home = ENV["HOME"] || Dir.home
+
+    # Remove skill
+    skill_dir = File.join(home, ".claude", "skills", "aether")
+    FileUtils.rm_rf(skill_dir) if Dir.exist?(skill_dir)
+
+    # Remove hooks
+    hooks_dir = File.join(home, ".claude", "hooks")
+    %w[aether-hook.py aether-hook.py.off aether-metrics.py aether-metrics.py.off].each do |f|
+      path = File.join(hooks_dir, f)
+      FileUtils.rm_f(path) if File.exist?(path)
+    end
+
+    # Remove recaps
+    recaps_dir = File.join(home, ".claude", ".aether-recaps")
+    FileUtils.rm_rf(recaps_dir) if Dir.exist?(recaps_dir)
+
+    # Remove Stop hook from settings.json
+    settings_path = File.join(home, ".claude", "settings.json")
+    if File.exist?(settings_path)
+      begin
+        require "json"
+        settings = JSON.parse(File.read(settings_path))
+        hooks = settings["hooks"] || {}
+        stop_hooks = hooks["Stop"] || []
+        stop_hooks.reject! do |entry|
+          (entry["hooks"] || []).any? { |h| (h["command"] || "").include?("aether") }
+        end
+        if stop_hooks.empty?
+          hooks.delete("Stop")
+        else
+          hooks["Stop"] = stop_hooks
+        end
+        if hooks.empty?
+          settings.delete("hooks")
+        else
+          settings["hooks"] = hooks
+        end
+        File.write(settings_path, JSON.pretty_generate(settings))
+      rescue StandardError
+        # Don't fail uninstall if settings cleanup fails
+      end
+    end
+  end
 
   def skill_content
     <<~'SKILL'
