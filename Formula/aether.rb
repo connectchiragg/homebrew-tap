@@ -1,26 +1,26 @@
 class Aether < Formula
   desc "Live observability for coding agents"
   homepage "https://github.com/connectchiragg/aether"
-  version "0.5.0"
+  version "0.5.2"
   license "MIT"
 
   on_macos do
     if Hardware::CPU.arm?
       url "https://github.com/connectchiragg/aether/releases/download/v#{version}/aether-aarch64-apple-darwin.tar.gz"
-      sha256 "15f019a0a57f944e30d98dab074521f34e22e50046a33964586e03364b55ac57"
+      sha256 "52793a7c5fe2994bc4b1c5b5c025f3854546f40382175882196e015e5947f32e"
     else
       url "https://github.com/connectchiragg/aether/releases/download/v#{version}/aether-x86_64-apple-darwin.tar.gz"
-      sha256 "ebab11ae6e69e36c4bc702f48e1b38f00894a6c89208f44cfad64d27fdd8399e"
+      sha256 "a6cbb6fc39454d829ca930783332614949c7fd2be3c15a20356b77f416a1ae4c"
     end
   end
 
   on_linux do
     if Hardware::CPU.arm?
       url "https://github.com/connectchiragg/aether/releases/download/v#{version}/aether-aarch64-unknown-linux-gnu.tar.gz"
-      sha256 "77db63d7506be2dd2b4fc9bc62048c099196e2942d671c61fb9848be9ee3be07"
+      sha256 "11fb9653ba8f5a6b21f7a1e35e2dc3bcceb55fcfa2ecb007468083a364384a7e"
     else
       url "https://github.com/connectchiragg/aether/releases/download/v#{version}/aether-x86_64-unknown-linux-gnu.tar.gz"
-      sha256 "ad5f2166aafd8c217c0d6908b0fcd4c3970a2de623fe3d30cc7d070a135ff951"
+      sha256 "70a7cb025b41d174f8b53f568ef3c90a9627edcc585e0011c0c272780db39c88"
     end
   end
 
