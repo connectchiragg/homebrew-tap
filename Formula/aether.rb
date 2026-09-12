@@ -1,34 +1,34 @@
 class Aether < Formula
   desc "Live observability for coding agents"
   homepage "https://github.com/connectchiragg/aether"
-  version "0.7.0"
+  version "0.7.1"
   license "MIT"
 
   bottle do
-    root_url "https://github.com/connectchiragg/aether/releases/download/v0.7.0"
-    sha256 cellar: :any_skip_relocation, arm64_sequoia: "03dab450e992080667b8fe05a91dfa74197b600bfd6ea40563459e07335dabac"
-    sha256 cellar: :any_skip_relocation, sequoia:       "362cae0829ca327580000167b22433becea7557355d3b3742d75e728fe620e9c"
-    sha256 cellar: :any_skip_relocation, arm64_linux:   "55779c4f83ae3331f0a63c8eca1b11219047e6844d90029cc1c1c516b70dfb1b"
-    sha256 cellar: :any_skip_relocation, x86_64_linux:  "179676dbf95bf978f200efdecd891ea4b0ecdbc43d2f3fea16de11ccab1f7221"
+    root_url "https://github.com/connectchiragg/aether/releases/download/v0.7.1"
+    sha256 cellar: :any_skip_relocation, arm64_sequoia: "26aea0648c2ac6793064d7c55585aa29cef7d7e5f960ce9dcdea46990fe42817"
+    sha256 cellar: :any_skip_relocation, sequoia:       "eba20771621061d7d852b9a728f4987daeed901cf535946c28a3cf616499fc62"
+    sha256 cellar: :any_skip_relocation, arm64_linux:   "82b45990962d085462005c429daa7270019ecc999c7ab370f1fee1ceeb62f1ce"
+    sha256 cellar: :any_skip_relocation, x86_64_linux:  "d8ae66d679fde6b4be4822e77b35ce594c86bc2018145eb3c2d56488dc303309"
   end
 
   on_macos do
     if Hardware::CPU.arm?
-      url "https://github.com/connectchiragg/aether/releases/download/v0.7.0/aether-aarch64-apple-darwin.tar.gz"
-      sha256 "f09867d65fafe9ca3a497dbc6a67743b5ca90c7d719f1b94b28ef36cb20cc833"
+      url "https://github.com/connectchiragg/aether/releases/download/v0.7.1/aether-aarch64-apple-darwin.tar.gz"
+      sha256 "07aa557271bcac5a169f5ca8f3bf1760da5aa33f6b6e3b6e8a30ef124d9720e5"
     else
-      url "https://github.com/connectchiragg/aether/releases/download/v0.7.0/aether-x86_64-apple-darwin.tar.gz"
-      sha256 "aa7b628508544974251fae47bbaebd2f2dee88b6c217c412db3e8b06915e8336"
+      url "https://github.com/connectchiragg/aether/releases/download/v0.7.1/aether-x86_64-apple-darwin.tar.gz"
+      sha256 "9dea539e47272cfb1b082aa28e8c8ce0a039206e28dabb52dd1be21c81262098"
     end
   end
 
   on_linux do
     if Hardware::CPU.arm?
-      url "https://github.com/connectchiragg/aether/releases/download/v0.7.0/aether-aarch64-unknown-linux-gnu.tar.gz"
-      sha256 "216dfeeb3f0364567bf4bbcb2dc31184c546a36e744a1c2f7a45501241940bed"
+      url "https://github.com/connectchiragg/aether/releases/download/v0.7.1/aether-aarch64-unknown-linux-gnu.tar.gz"
+      sha256 "b411fec81d63aedcd773ddcf5b99f8288ebe6d70a4fba93a32a2e28947bbb1bc"
     else
-      url "https://github.com/connectchiragg/aether/releases/download/v0.7.0/aether-x86_64-unknown-linux-gnu.tar.gz"
-      sha256 "660bb8b7e4188e95fc9e373fe745c7d10e720acebb9007ce92c3d209395d0470"
+      url "https://github.com/connectchiragg/aether/releases/download/v0.7.1/aether-x86_64-unknown-linux-gnu.tar.gz"
+      sha256 "bfde0ff0dc3494810c5f3651c27823311bec35d402f23b8132aad3acc43d4b6d"
     end
   end
 
